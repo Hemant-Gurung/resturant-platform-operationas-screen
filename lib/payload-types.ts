@@ -299,11 +299,8 @@ export interface Table {
  */
 export interface Order {
   id: number;
-  /**
-   * Auto-populated from the app's API key
-   */
-  restaurant: 'my-restaurant' | 'verde-kitchen';
-  type: 'takeaway' | 'eat-in';
+  restaurant?: ('my-restaurant' | 'verde-kitchen') | null;
+  type: 'takeaway' | 'eat-in' | 'delivery';
   status: 'pending' | 'preparing' | 'ready' | 'completed' | 'cancelled';
   customer: {
     name: string;
@@ -316,8 +313,22 @@ export interface Order {
     quantity: number;
     id?: string | null;
   }[];
+  /**
+   * Auto-calculated from items
+   */
   total: number;
   tableNumber?: string | null;
+  pickupTime?: string | null;
+  delivery?: {
+    street?: string | null;
+    city?: string | null;
+    postalCode?: string | null;
+    instructions?: string | null;
+  };
+  /**
+   * Leave empty for ASAP orders. Set a date/time for future orders.
+   */
+  scheduledFor?: string | null;
   notes?: string | null;
   stripeSessionId?: string | null;
   updatedAt: string;
@@ -780,6 +791,16 @@ export interface OrdersSelect<T extends boolean = true> {
       };
   total?: T;
   tableNumber?: T;
+  pickupTime?: T;
+  delivery?:
+    | T
+    | {
+        street?: T;
+        city?: T;
+        postalCode?: T;
+        instructions?: T;
+      };
+  scheduledFor?: T;
   notes?: T;
   stripeSessionId?: T;
   updatedAt?: T;

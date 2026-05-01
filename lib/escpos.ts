@@ -66,6 +66,13 @@ export function kitchenTicket(order: Order): string {
     lines.push(BOLD_ON + `Pickup: ${order.pickup_time}` + BOLD_OFF + FEED)
   }
 
+  if (order.scheduled_for) {
+    const scheduled = new Date(order.scheduled_for).toLocaleString('en-GB', {
+      day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+    })
+    lines.push(BOLD_ON + `SCHEDULED: ${scheduled}` + BOLD_OFF + FEED)
+  }
+
   lines.push(FEED + FEED + FEED + CUT)
 
   return lines.join('')

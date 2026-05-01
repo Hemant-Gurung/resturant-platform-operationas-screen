@@ -17,6 +17,7 @@ export type Order = {
   delivery_city?: string | null
   delivery_postal_code?: string | null
   delivery_instructions?: string | null
+  scheduled_for?: string | null
   notes?: string | null
   created_at: string
   updated_at: string

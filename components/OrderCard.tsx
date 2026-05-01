@@ -131,6 +131,11 @@ export function OrderCard({ order, onReprint }: { order: Order; onReprint?: (ord
               Pickup: {order.pickup_time}
             </span>
           )}
+          {order.scheduled_for && (
+            <span className="bg-orange-900/60 text-orange-300 border border-orange-700 px-2 py-0.5 rounded-full font-semibold">
+              Scheduled: {new Date(order.scheduled_for).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
           <span className="bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full">
             #{order.id}
           </span>
