@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Order, OrderStatus } from '@/types/order'
 
-export function useOrders(statuses: OrderStatus[], onNewOrder?: () => void) {
+export function useOrders(statuses: OrderStatus[], onNewOrder?: (order: Order) => void) {
   const [orders, setOrders] = useState<Order[]>([])
   const onNewOrderRef = useRef(onNewOrder)
   const channelId = useRef(`orders-${Math.random().toString(36).slice(2)}`)
@@ -46,8 +46,9 @@ export function useOrders(statuses: OrderStatus[], onNewOrder?: () => void) {
                 .single()
                 .then(({ data }) => {
                   if (data) {
-                    setOrders((prev) => [...prev, data as Order])
-                    onNewOrderRef.current?.()
+                    const full = data as Order
+                    setOrders((prev) => [...prev, full])
+                    onNewOrderRef.current?.(full)
                   }
                 })
             }
@@ -82,7 +83,7 @@ export function useOrders(statuses: OrderStatus[], onNewOrder?: () => void) {
       supabase.removeChannel(channel)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [statusKey])
 
   return { orders }
 }

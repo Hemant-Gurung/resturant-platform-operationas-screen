@@ -4,7 +4,7 @@ export type OrderStatus = 'pending' | 'preparing' | 'ready' | 'completed' | 'can
 export type Order = {
   id: number
   restaurant: string
-  type: 'eat-in' | 'takeaway'
+  type: 'eat-in' | 'takeaway' | 'delivery'
   status: OrderStatus
   customer_name: string
   customer_phone: string
@@ -12,6 +12,11 @@ export type Order = {
   orders_items?: { name: string; price: number; quantity: number; id?: string | null }[] | null
   total: number
   table_number?: string | null
+  pickup_time?: string | null
+  delivery_street?: string | null
+  delivery_city?: string | null
+  delivery_postal_code?: string | null
+  delivery_instructions?: string | null
   notes?: string | null
   created_at: string
   updated_at: string

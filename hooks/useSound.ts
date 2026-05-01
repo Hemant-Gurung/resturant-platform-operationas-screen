@@ -5,11 +5,20 @@ import { useCallback, useRef } from 'react'
 export function useSound() {
   const ctxRef = useRef<AudioContext | null>(null)
 
-  const play = useCallback(() => {
+  function getCtx() {
     if (!ctxRef.current || ctxRef.current.state === 'closed') {
       ctxRef.current = new AudioContext()
     }
-    const ctx = ctxRef.current
+    return ctxRef.current
+  }
+
+  const play = useCallback(async () => {
+    const ctx = getCtx()
+
+    // Resume if suspended (browser autoplay policy)
+    if (ctx.state === 'suspended') {
+      await ctx.resume()
+    }
 
     const tone = (freq: number, start: number, duration: number) => {
       const osc = ctx.createOscillator()
@@ -25,11 +34,18 @@ export function useSound() {
       osc.stop(ctx.currentTime + start + duration)
     }
 
-    // Rising three-note chime
     tone(880, 0, 0.25)
     tone(1100, 0.2, 0.25)
     tone(1320, 0.4, 0.4)
   }, [])
 
-  return { play }
+  // Call this on first user interaction to unlock audio early
+  const unlock = useCallback(async () => {
+    const ctx = getCtx()
+    if (ctx.state === 'suspended') {
+      await ctx.resume()
+    }
+  }, [])
+
+  return { play, unlock }
 }
