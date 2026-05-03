@@ -5,6 +5,8 @@ import { LoginView } from '@/components/LoginView'
 import { KitchenView } from '@/components/KitchenView'
 import { CounterView } from '@/components/CounterView'
 import { CompletedView } from '@/components/CompletedView'
+import { POSView } from '@/components/pos/POSView'
+import { NotificationSubscriber } from '@/components/NotificationSubscriber'
 import type { View } from '@/components/NavTabs'
 
 export default function App() {
@@ -33,7 +35,16 @@ export default function App() {
   if (!hydrated) return null
   if (!authenticated) return <LoginView onAuth={handleAuth} />
 
-  if (view === 'counter') return <CounterView current={view} onSwitch={switchView} />
-  if (view === 'completed') return <CompletedView current={view} onSwitch={switchView} />
-  return <KitchenView current={view} onSwitch={switchView} />
+  let activeView
+  if (view === 'pos') activeView = <POSView onSwitch={switchView} />
+  else if (view === 'counter') activeView = <CounterView current={view} onSwitch={switchView} />
+  else if (view === 'completed') activeView = <CompletedView current={view} onSwitch={switchView} />
+  else activeView = <KitchenView current={view} onSwitch={switchView} />
+
+  return (
+    <>
+      <NotificationSubscriber />
+      {activeView}
+    </>
+  )
 }

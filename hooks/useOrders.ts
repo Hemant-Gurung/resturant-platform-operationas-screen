@@ -4,6 +4,10 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Order, OrderStatus } from '@/types/order'
 
+// Set once when JS loads. Orders created after this time (e.g. from POS on the
+// same device while kitchen was unmounted) must not be pre-marked as notified.
+const SESSION_START = new Date().toISOString()
+
 // e.g. "09:00" — scheduled orders only appear at or after this time on their day
 const OPENING_TIME = process.env.NEXT_PUBLIC_OPENING_TIME ?? '09:00'
 
@@ -56,9 +60,14 @@ export function useOrders(statuses: OrderStatus[], onNewOrder?: (order: Order) =
       .then(({ data }) => {
         if (data) {
           const orders = data as Order[]
-          // Pre-mark visible initial orders so we don't re-print them on page load.
-          // Scheduled orders not yet visible will be notified when they become visible.
-          orders.filter(isVisible).forEach((o) => notifiedIds.current.add(o.id))
+          // Pre-mark orders that existed before this session so we don't re-notify
+          // them on mount. Orders created after SESSION_START (e.g. from POS on the
+          // same device while kitchen was unmounted) are intentionally left unmarked
+          // so they trigger sound/print when this view mounts.
+          orders
+            .filter(isVisible)
+            .filter((o) => o.created_at < SESSION_START)
+            .forEach((o) => notifiedIds.current.add(o.id))
           setAllOrders(orders)
         }
       })

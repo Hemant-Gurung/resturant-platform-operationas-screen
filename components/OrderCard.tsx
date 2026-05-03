@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { groupedVat, VAT_RATES } from '@/lib/vat'
 import type { Order, OrderStatus } from '@/types/order'
 
 const NEXT_STATUS: Record<OrderStatus, OrderStatus | null> = {
@@ -80,6 +81,12 @@ export function OrderCard({ order, onReprint }: { order: Order; onReprint?: (ord
   const elapsed = Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000)
   const items = order.orders_items ?? []
   const canCancel = CANCELLABLE.includes(order.status)
+  const vatLines = (order.orders_items ?? []).map((i) => ({
+    price: i.price,
+    quantity: i.quantity,
+    vatRate: (i.vat_rate ?? 12) as 6 | 12 | 21,
+  }))
+  const { byRate, totalVat, totalExcl } = groupedVat(vatLines)
 
   async function advance() {
     if (!next || loading) return
@@ -177,18 +184,36 @@ export function OrderCard({ order, onReprint }: { order: Order; onReprint?: (ord
         )}
 
         {/* Total + reprint */}
-        <div className="flex justify-between items-center text-sm border-t border-gray-700 pt-2">
-          <span className="text-gray-500">Total</span>
-          <div className="flex items-center gap-2">
-            {onReprint && (
-              <button
-                onClick={() => onReprint(order)}
-                className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white px-2 py-1 rounded-lg transition-colors border border-gray-700"
-              >
-                Reprint
-              </button>
-            )}
-            <span className="text-white font-bold">€{order.total.toFixed(2)}</span>
+        <div className="border-t border-gray-700 pt-2 space-y-1">
+          <div className="flex justify-between text-xs text-gray-600">
+            <span>Excl. VAT</span>
+            <span>€{totalExcl.toFixed(2)}</span>
+          </div>
+          {VAT_RATES.map((r) =>
+            byRate[r] > 0.005 ? (
+              <div key={r} className="flex justify-between text-xs text-gray-600">
+                <span>VAT {r}%</span>
+                <span>€{byRate[r].toFixed(2)}</span>
+              </div>
+            ) : null
+          )}
+          <div className="flex justify-between text-xs text-gray-600">
+            <span>Total VAT</span>
+            <span>€{totalVat.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm pt-1">
+            <span className="text-gray-500">Total</span>
+            <div className="flex items-center gap-2">
+              {onReprint && (
+                <button
+                  onClick={() => onReprint(order)}
+                  className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white px-2 py-1 rounded-lg transition-colors border border-gray-700"
+                >
+                  Reprint
+                </button>
+              )}
+              <span className="text-white font-bold">€{order.total.toFixed(2)}</span>
+            </div>
           </div>
         </div>
 

@@ -1,4 +1,5 @@
 import type { Order } from '@/types/order'
+import { groupedVat, VAT_RATES } from '@/lib/vat'
 
 const ESC = '\x1B'
 const GS = '\x1D'
@@ -104,8 +105,23 @@ export function cashierReceipt(order: Order, restaurantName: string): string {
       pad(`${i.quantity}x  ${i.name}`, `€${(i.price * i.quantity).toFixed(2)}`) + FEED
     ),
     divider() + FEED,
-    BOLD_ON + pad('TOTAL', `€${order.total.toFixed(2)}`) + BOLD_OFF + FEED,
-    divider() + FEED,
+    ...(() => {
+      const lines = (order.orders_items ?? []).map((i) => ({
+        price: i.price,
+        quantity: i.quantity,
+        vatRate: (i.vat_rate ?? 12) as 6 | 12 | 21,
+      }))
+      const { byRate, totalExcl } = groupedVat(lines)
+      return [
+        pad('Excl. VAT', `€${totalExcl.toFixed(2)}`) + FEED,
+        ...VAT_RATES.filter((r) => byRate[r] > 0.005).map(
+          (r) => pad(`VAT ${r}%`, `€${byRate[r].toFixed(2)}`) + FEED
+        ),
+        divider() + FEED,
+        BOLD_ON + pad('TOTAL', `€${order.total.toFixed(2)}`) + BOLD_OFF + FEED,
+        divider() + FEED,
+      ]
+    })(),
     ALIGN_CENTER,
     FEED + 'Thank you!' + FEED,
     FEED + FEED + FEED + CUT,

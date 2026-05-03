@@ -3,12 +3,13 @@
 import { useEffect } from 'react'
 import { useFullscreen } from '@/hooks/useFullscreen'
 
-export type View = 'kitchen' | 'counter' | 'completed'
+export type View = 'kitchen' | 'counter' | 'completed' | 'pos'
 
 const TABS: { id: View; label: string }[] = [
   { id: 'kitchen', label: 'Kitchen' },
   { id: 'counter', label: 'Counter' },
   { id: 'completed', label: 'Completed' },
+  { id: 'pos', label: 'POS' },
 ]
 
 export function NavTabs({

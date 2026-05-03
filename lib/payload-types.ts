@@ -167,6 +167,10 @@ export interface MenuItem {
    */
   restaurant?: ('my-restaurant' | 'verde-kitchen') | null;
   /**
+   * 6% food · 12% restaurant meals · 21% alcohol / standard
+   */
+  vatRate: number;
+  /**
    * Uncheck to hide this item from the menu
    */
   available?: boolean | null;
@@ -311,6 +315,7 @@ export interface Order {
     name: string;
     price: number;
     quantity: number;
+    vatRate?: number | null;
     id?: string | null;
   }[];
   /**
@@ -330,6 +335,7 @@ export interface Order {
    */
   scheduledFor?: string | null;
   notes?: string | null;
+  paymentMethod?: ('cash' | 'card') | null;
   stripeSessionId?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -693,6 +699,7 @@ export interface MenuItemsSelect<T extends boolean = true> {
   description?: T;
   price?: T;
   restaurant?: T;
+  vatRate?: T;
   available?: T;
   category?: T;
   image?: T;
@@ -787,6 +794,7 @@ export interface OrdersSelect<T extends boolean = true> {
         name?: T;
         price?: T;
         quantity?: T;
+        vatRate?: T;
         id?: T;
       };
   total?: T;
@@ -802,6 +810,7 @@ export interface OrdersSelect<T extends boolean = true> {
       };
   scheduledFor?: T;
   notes?: T;
+  paymentMethod?: T;
   stripeSessionId?: T;
   updatedAt?: T;
   createdAt?: T;

@@ -1,30 +1,14 @@
 'use client'
 
-import { useCallback, useEffect } from 'react'
 import { useOrders } from '@/hooks/useOrders'
-import { useSound } from '@/hooks/useSound'
 import { usePrinter } from '@/hooks/usePrinter'
 import { OrderCard } from '@/components/OrderCard'
 import { NavTabs } from '@/components/NavTabs'
 import type { View } from '@/components/NavTabs'
-import type { Order } from '@/types/order'
 
 export function KitchenView({ current, onSwitch }: { current: View; onSwitch: (v: View) => void }) {
-  const { play, unlock } = useSound()
   const { status: printerStatus, printKitchen, printCashier } = usePrinter()
-
-  const onNewOrder = useCallback((order: Order) => {
-    play()
-    printKitchen(order)
-    printCashier(order)
-  }, [play, printKitchen, printCashier])
-
-  const { orders } = useOrders(['pending', 'preparing', 'ready'] as const, onNewOrder)
-
-  useEffect(() => {
-    window.addEventListener('pointerdown', unlock, { once: true })
-    return () => window.removeEventListener('pointerdown', unlock)
-  }, [unlock])
+  const { orders } = useOrders(['pending', 'preparing', 'ready'] as const)
 
   const counts = {
     pending: orders.filter((o) => o.status === 'pending').length,
