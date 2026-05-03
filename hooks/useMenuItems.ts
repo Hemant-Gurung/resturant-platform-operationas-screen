@@ -23,11 +23,11 @@ export type GroupedMenu = {
   items: MenuItem[]
 }
 
-export function useMenuItems() {
+export function useMenuItems(locale?: string) {
   const [grouped, setGrouped] = useState<GroupedMenu[]>([])
   const [loading, setLoading] = useState(true)
   const restaurant = process.env.NEXT_PUBLIC_RESTAURANT!
-  const locale = process.env.NEXT_PUBLIC_LOCALE ?? 'en'
+  const resolvedLocale = locale ?? process.env.NEXT_PUBLIC_LOCALE ?? 'en'
 
   useEffect(() => {
     Promise.all([
@@ -39,7 +39,7 @@ export function useMenuItems() {
       supabase
         .from('menu_items_locales')
         .select('_parent_id, name, description')
-        .eq('_locale', locale),
+        .eq('_locale', resolvedLocale),
       supabase
         .from('menu_categories')
         .select('id')
@@ -47,7 +47,7 @@ export function useMenuItems() {
       supabase
         .from('menu_categories_locales')
         .select('_parent_id, name')
-        .eq('_locale', locale),
+        .eq('_locale', resolvedLocale),
     ]).then(([{ data: rawItems }, { data: itemLocales }, { data: rawCats }, { data: catLocales }]) => {
       if (rawItems && itemLocales && rawCats && catLocales) {
         const items: MenuItem[] = rawItems.map((item) => {
@@ -78,7 +78,7 @@ export function useMenuItems() {
       }
       setLoading(false)
     })
-  }, [restaurant, locale])
+  }, [restaurant, resolvedLocale])
 
   return { grouped, loading }
 }

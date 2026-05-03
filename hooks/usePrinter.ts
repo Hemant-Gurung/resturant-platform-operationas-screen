@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { kitchenTicket, cashierReceipt } from '@/lib/escpos'
 import type { Order } from '@/types/order'
+import type { Locale } from '@/lib/i18n'
 
 declare global {
   interface Window {
@@ -69,12 +70,12 @@ export function usePrinter() {
   }, [])
 
   const printKitchen = useCallback(
-    (order: Order) => print(kitchenTicket(order)),
+    (order: Order, locale: Locale = 'en') => print(kitchenTicket(order, locale)),
     [print]
   )
 
   const printCashier = useCallback(
-    (order: Order) => print(cashierReceipt(order, RESTAURANT_NAME)),
+    (order: Order, locale: Locale = 'en') => print(cashierReceipt(order, RESTAURANT_NAME, locale)),
     [print]
   )
 

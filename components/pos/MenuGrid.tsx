@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useMenuItems } from '@/hooks/useMenuItems'
+import { useTrans } from '@/components/LocaleContext'
 import type { MenuItem } from '@/hooks/useMenuItems'
 import { CategoryTabs } from './CategoryTabs'
 import { MenuItemCard } from './MenuItemCard'
@@ -14,7 +15,8 @@ export function MenuGrid({
   cart: CartItem[]
   onAdd: (item: MenuItem) => void
 }) {
-  const { grouped, loading } = useMenuItems()
+  const { t, locale } = useTrans()
+  const { grouped, loading } = useMenuItems(locale)
   const [selectedCat, setSelectedCat] = useState<number | null>(null)
 
   const categories = grouped.map((g) => g.category)
@@ -26,7 +28,7 @@ export function MenuGrid({
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full text-[#ccc] text-sm">
-        Loading menu…
+        {t('loadingMenu')}
       </div>
     )
   }
@@ -48,7 +50,7 @@ export function MenuGrid({
           />
         ))}
         {items.length === 0 && (
-          <p className="col-span-3 text-center text-[#ccc] text-sm py-8">No items in this category</p>
+          <p className="col-span-3 text-center text-[#ccc] text-sm py-8">{t('noItemsInCategory')}</p>
         )}
       </div>
     </div>

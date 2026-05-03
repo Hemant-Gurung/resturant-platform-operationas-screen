@@ -2,11 +2,13 @@
 
 import { useOrders } from '@/hooks/useOrders'
 import { usePrinter } from '@/hooks/usePrinter'
+import { useTrans } from '@/components/LocaleContext'
 import { OrderCard } from '@/components/OrderCard'
 import { NavTabs } from '@/components/NavTabs'
 import type { View } from '@/components/NavTabs'
 
 export function CounterView({ current, onSwitch }: { current: View; onSwitch: (v: View) => void }) {
+  const { locale } = useTrans()
   const { status: printerStatus, printKitchen, printCashier } = usePrinter()
   const { orders } = useOrders(['ready'] as const)
 
@@ -31,7 +33,7 @@ export function CounterView({ current, onSwitch }: { current: View; onSwitch: (v
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {orders.map((order) => (
-            <OrderCard key={order.id} order={order} onReprint={(o) => { printKitchen(o); printCashier(o) }} />
+            <OrderCard key={order.id} order={order} onReprint={(o) => { printKitchen(o, locale); printCashier(o, locale) }} />
           ))}
         </div>
       )}

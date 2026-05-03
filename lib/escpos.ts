@@ -1,5 +1,6 @@
 import type { Order } from '@/types/order'
 import { groupedVat, VAT_RATES } from '@/lib/vat'
+import { t, fill, LOCALE_CODE, type Locale } from '@/lib/i18n'
 
 const ESC = '\x1B'
 const GS = '\x1D'
@@ -24,14 +25,14 @@ function divider() {
   return '-'.repeat(W)
 }
 
-export function kitchenTicket(order: Order): string {
+export function kitchenTicket(order: Order, locale: Locale = 'en'): string {
   const items = order.orders_items ?? []
   const type =
     order.type === 'eat-in'
-      ? `Dine-in — Table ${order.table_number ?? '?'}`
+      ? fill(t('printDineIn', locale), { n: order.table_number ?? '?' })
       : order.type === 'delivery'
-      ? 'Delivery'
-      : 'Takeaway'
+      ? t('printDelivery', locale)
+      : t('printTakeaway', locale)
 
   const lines: string[] = [
     INIT,
@@ -48,13 +49,13 @@ export function kitchenTicket(order: Order): string {
   ]
 
   if (order.notes) {
-    lines.push(BOLD_ON + 'NOTE:' + BOLD_OFF + FEED)
+    lines.push(BOLD_ON + t('printNote', locale) + BOLD_OFF + FEED)
     lines.push(order.notes + FEED)
     lines.push(divider() + FEED)
   }
 
   if (order.type === 'delivery' && order.delivery_street) {
-    lines.push(BOLD_ON + 'DELIVER TO:' + BOLD_OFF + FEED)
+    lines.push(BOLD_ON + t('printDeliverTo', locale) + BOLD_OFF + FEED)
     lines.push(order.delivery_street + FEED)
     lines.push(`${order.delivery_postal_code ?? ''} ${order.delivery_city ?? ''}`.trim() + FEED)
     if (order.delivery_instructions) {
@@ -64,14 +65,18 @@ export function kitchenTicket(order: Order): string {
   }
 
   if (order.pickup_time) {
-    lines.push(BOLD_ON + `Pickup: ${order.pickup_time}` + BOLD_OFF + FEED)
+    lines.push(
+      BOLD_ON + fill(t('printPickup', locale), { time: order.pickup_time }) + BOLD_OFF + FEED
+    )
   }
 
   if (order.scheduled_for) {
-    const scheduled = new Date(order.scheduled_for).toLocaleString('en-GB', {
+    const dt = new Date(order.scheduled_for).toLocaleString(LOCALE_CODE[locale], {
       day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
     })
-    lines.push(BOLD_ON + `SCHEDULED: ${scheduled}` + BOLD_OFF + FEED)
+    lines.push(
+      BOLD_ON + fill(t('printScheduled', locale), { dt }) + BOLD_OFF + FEED
+    )
   }
 
   lines.push(FEED + FEED + FEED + CUT)
@@ -79,9 +84,9 @@ export function kitchenTicket(order: Order): string {
   return lines.join('')
 }
 
-export function cashierReceipt(order: Order, restaurantName: string): string {
+export function cashierReceipt(order: Order, restaurantName: string, locale: Locale = 'en'): string {
   const items = order.orders_items ?? []
-  const now = new Date().toLocaleString('en-GB', {
+  const now = new Date().toLocaleString(LOCALE_CODE[locale], {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -113,17 +118,18 @@ export function cashierReceipt(order: Order, restaurantName: string): string {
       }))
       const { byRate, totalExcl } = groupedVat(lines)
       return [
-        pad('Excl. VAT', `€${totalExcl.toFixed(2)}`) + FEED,
+        pad(t('printExclVat', locale), `€${totalExcl.toFixed(2)}`) + FEED,
         ...VAT_RATES.filter((r) => byRate[r] > 0.005).map(
-          (r) => pad(`VAT ${r}%`, `€${byRate[r].toFixed(2)}`) + FEED
+          (r) =>
+            pad(fill(t('printVatRate', locale), { rate: r }), `€${byRate[r].toFixed(2)}`) + FEED
         ),
         divider() + FEED,
-        BOLD_ON + pad('TOTAL', `€${order.total.toFixed(2)}`) + BOLD_OFF + FEED,
+        BOLD_ON + pad(t('printTotal', locale), `€${order.total.toFixed(2)}`) + BOLD_OFF + FEED,
         divider() + FEED,
       ]
     })(),
     ALIGN_CENTER,
-    FEED + 'Thank you!' + FEED,
+    FEED + t('printThankYou', locale) + FEED,
     FEED + FEED + FEED + CUT,
   ]
 

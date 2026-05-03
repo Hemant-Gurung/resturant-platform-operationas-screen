@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { groupedVat, VAT_RATES } from '@/lib/vat'
+import { useTrans } from '@/components/LocaleContext'
 import type { CartItem } from '@/hooks/useCart'
 
 type PaymentMethod = 'cash' | 'card'
@@ -19,6 +20,7 @@ export function CheckoutSheet({
   onDone: () => void
   onCancel: () => void
 }) {
+  const { t } = useTrans()
   const [orderType, setOrderType] = useState<OrderType>('takeaway')
   const [customerName, setCustomerName] = useState('')
   const [customerPhone, setCustomerPhone] = useState('')
@@ -30,8 +32,8 @@ export function CheckoutSheet({
   const { byRate, totalExcl } = groupedVat(items)
 
   async function place() {
-    if (!customerName.trim()) return setError('Customer name is required')
-    if (orderType === 'eat-in' && !tableNumber.trim()) return setError('Table number is required')
+    if (!customerName.trim()) return setError(t('errCustomerName'))
+    if (orderType === 'eat-in' && !tableNumber.trim()) return setError(t('errTableNumber'))
 
     setError('')
     setSubmitting(true)
@@ -52,7 +54,7 @@ export function CheckoutSheet({
       .single()
 
     if (orderErr || !order) {
-      setError('Failed to place order. Try again.')
+      setError(t('errPlaceOrder'))
       setSubmitting(false)
       return
     }
@@ -77,23 +79,23 @@ export function CheckoutSheet({
       <div className="bg-white rounded-2xl w-full max-w-sm flex flex-col gap-4 p-6 shadow-2xl">
 
         <div className="flex items-center justify-between">
-          <p className="font-mono font-bold text-[#2d2d2d] text-base tracking-wide">Confirm Order</p>
+          <p className="font-mono font-bold text-[#2d2d2d] text-base tracking-wide">{t('confirmOrder')}</p>
           <button onClick={onCancel} className="text-[#bbb] hover:text-[#2d2d2d] text-2xl leading-none transition-colors">×</button>
         </div>
 
         {/* Order type */}
         <div className="flex gap-2">
-          {(['takeaway', 'eat-in'] as const).map((t) => (
+          {(['takeaway', 'eat-in'] as const).map((type) => (
             <button
-              key={t}
-              onClick={() => setOrderType(t)}
+              key={type}
+              onClick={() => setOrderType(type)}
               className={`flex-1 py-2 rounded-xl text-sm font-bold border-2 transition-colors ${
-                orderType === t
+                orderType === type
                   ? 'bg-[#ff7043] border-[#ff7043] text-white'
                   : 'bg-white border-[#e0d6cc] text-[#999] hover:border-[#ff7043]'
               }`}
             >
-              {t === 'eat-in' ? 'Eat-in' : 'Takeaway'}
+              {type === 'eat-in' ? t('eatIn') : t('takeaway')}
             </button>
           ))}
         </div>
@@ -101,14 +103,14 @@ export function CheckoutSheet({
         {/* Customer fields */}
         <input
           type="text"
-          placeholder="Customer name *"
+          placeholder={t('customerName')}
           value={customerName}
           onChange={(e) => setCustomerName(e.target.value)}
           className="border-2 border-[#f0e8e0] rounded-xl px-4 py-2.5 text-sm text-[#2d2d2d] focus:outline-none focus:border-[#ff7043] placeholder:text-[#ccc]"
         />
         <input
           type="tel"
-          placeholder="Phone"
+          placeholder={t('phone')}
           value={customerPhone}
           onChange={(e) => setCustomerPhone(e.target.value)}
           className="border-2 border-[#f0e8e0] rounded-xl px-4 py-2.5 text-sm text-[#2d2d2d] focus:outline-none focus:border-[#ff7043] placeholder:text-[#ccc]"
@@ -116,7 +118,7 @@ export function CheckoutSheet({
         {orderType === 'eat-in' && (
           <input
             type="text"
-            placeholder="Table number *"
+            placeholder={t('tableNumber')}
             value={tableNumber}
             onChange={(e) => setTableNumber(e.target.value)}
             className="border-2 border-[#f0e8e0] rounded-xl px-4 py-2.5 text-sm text-[#2d2d2d] focus:outline-none focus:border-[#ff7043] placeholder:text-[#ccc]"
@@ -125,7 +127,7 @@ export function CheckoutSheet({
 
         {/* Payment method */}
         <div>
-          <p className="text-xs text-[#aaa] font-semibold mb-2 uppercase tracking-wide">Payment</p>
+          <p className="text-xs text-[#aaa] font-semibold mb-2 uppercase tracking-wide">{t('paymentLabel')}</p>
           <div className="flex gap-2">
             {(['cash', 'card'] as const).map((m) => (
               <button
@@ -137,7 +139,7 @@ export function CheckoutSheet({
                     : 'bg-white border-[#e0d6cc] text-[#999] hover:border-[#ff7043]'
                 }`}
               >
-                {m === 'cash' ? 'Cash' : 'Card'}
+                {m === 'cash' ? t('cash') : t('card')}
               </button>
             ))}
           </div>
@@ -146,19 +148,19 @@ export function CheckoutSheet({
         {/* Totals */}
         <div className="py-3 border-t-2 border-dashed border-[#f0e8e0] space-y-1.5">
           <div className="flex justify-between text-xs text-[#aaa]">
-            <span>Excl. VAT</span>
+            <span>{t('exclVat')}</span>
             <span>€{totalExcl.toFixed(2)}</span>
           </div>
           {VAT_RATES.map((r) =>
             byRate[r] > 0.005 ? (
               <div key={r} className="flex justify-between text-xs text-[#aaa]">
-                <span>VAT {r}%</span>
+                <span>{t('vatRate').replace('{rate}', String(r))}</span>
                 <span>€{byRate[r].toFixed(2)}</span>
               </div>
             ) : null
           )}
           <div className="flex justify-between items-baseline pt-1">
-            <span className="font-mono font-bold text-[#2d2d2d] text-sm">Total</span>
+            <span className="font-mono font-bold text-[#2d2d2d] text-sm">{t('total')}</span>
             <span className="font-mono font-bold text-xl text-[#2d2d2d]">€{total.toFixed(2)}</span>
           </div>
         </div>
@@ -170,7 +172,7 @@ export function CheckoutSheet({
           disabled={submitting}
           className="w-full py-3 bg-[#ff7043] hover:bg-[#f4511e] active:bg-[#e64a19] disabled:opacity-40 text-white font-bold rounded-xl text-sm transition-colors"
         >
-          {submitting ? 'Placing order…' : 'Place Order →'}
+          {submitting ? t('placingOrder') : t('placeOrder')}
         </button>
       </div>
     </div>

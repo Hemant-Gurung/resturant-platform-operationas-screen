@@ -4,17 +4,19 @@ import { useCallback, useEffect } from 'react'
 import { useOrders } from '@/hooks/useOrders'
 import { useSound } from '@/hooks/useSound'
 import { usePrinter } from '@/hooks/usePrinter'
+import { useSettings } from '@/components/SettingsContext'
 import type { Order } from '@/types/order'
 
 export function NotificationSubscriber() {
   const { play, unlock } = useSound()
   const { printKitchen, printCashier } = usePrinter()
+  const { locale, soundEnabled } = useSettings()
 
   const onNewOrder = useCallback((order: Order) => {
-    play()
-    printKitchen(order)
-    printCashier(order)
-  }, [play, printKitchen, printCashier])
+    if (soundEnabled) play()
+    printKitchen(order, locale)
+    printCashier(order, locale)
+  }, [play, printKitchen, printCashier, locale, soundEnabled])
 
   // Fires for new pending orders (new customer orders)
   useOrders(['pending', 'preparing', 'ready'] as const, onNewOrder)

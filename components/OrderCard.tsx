@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { groupedVat, VAT_RATES } from '@/lib/vat'
+import { useTrans } from '@/components/LocaleContext'
+import { LOCALE_CODE } from '@/lib/i18n'
 import type { Order, OrderStatus } from '@/types/order'
 
 const NEXT_STATUS: Record<OrderStatus, OrderStatus | null> = {
@@ -11,14 +13,6 @@ const NEXT_STATUS: Record<OrderStatus, OrderStatus | null> = {
   ready: 'completed',
   completed: null,
   cancelled: null,
-}
-
-const STATUS_LABEL: Record<OrderStatus, string> = {
-  pending: 'Pending',
-  preparing: 'Preparing',
-  ready: 'Ready',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
 }
 
 const CARD_STYLE: Record<OrderStatus, string> = {
@@ -47,26 +41,40 @@ const BTN_STYLE: Record<OrderStatus, string> = {
 
 const CANCELLABLE: OrderStatus[] = ['pending', 'preparing', 'ready']
 
-function CancelConfirm({ onConfirm, onDismiss }: { onConfirm: () => void; onDismiss: () => void }) {
+function CancelConfirm({
+  onConfirm,
+  onDismiss,
+  title,
+  warning,
+  keep,
+  yes,
+}: {
+  onConfirm: () => void
+  onDismiss: () => void
+  title: string
+  warning: string
+  keep: string
+  yes: string
+}) {
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-sm flex flex-col gap-4">
         <div>
-          <h3 className="text-white font-bold text-lg">Cancel order?</h3>
-          <p className="text-gray-400 text-sm mt-1">This cannot be undone. The order will be marked as cancelled.</p>
+          <h3 className="text-white font-bold text-lg">{title}</h3>
+          <p className="text-gray-400 text-sm mt-1">{warning}</p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={onDismiss}
             className="flex-1 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold text-sm transition-colors"
           >
-            Keep order
+            {keep}
           </button>
           <button
             onClick={onConfirm}
             className="flex-1 py-2.5 rounded-xl bg-red-700 hover:bg-red-600 active:bg-red-800 text-white font-semibold text-sm transition-colors"
           >
-            Yes, cancel
+            {yes}
           </button>
         </div>
       </div>
@@ -75,6 +83,7 @@ function CancelConfirm({ onConfirm, onDismiss }: { onConfirm: () => void; onDism
 }
 
 export function OrderCard({ order, onReprint }: { order: Order; onReprint?: (order: Order) => void }) {
+  const { t, fill, locale } = useTrans()
   const [loading, setLoading] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const next = NEXT_STATUS[order.status]
@@ -87,6 +96,14 @@ export function OrderCard({ order, onReprint }: { order: Order; onReprint?: (ord
     vatRate: (i.vat_rate ?? 12) as 6 | 12 | 21,
   }))
   const { byRate, totalVat, totalExcl } = groupedVat(vatLines)
+
+  const statusLabel: Record<string, string> = {
+    pending: t('pending'),
+    preparing: t('preparing'),
+    ready: t('ready'),
+    completed: t('completed'),
+    cancelled: t('cancelled'),
+  }
 
   async function advance() {
     if (!next || loading) return
@@ -105,7 +122,14 @@ export function OrderCard({ order, onReprint }: { order: Order; onReprint?: (ord
   return (
     <>
       {confirming && (
-        <CancelConfirm onConfirm={cancel} onDismiss={() => setConfirming(false)} />
+        <CancelConfirm
+          onConfirm={cancel}
+          onDismiss={() => setConfirming(false)}
+          title={t('cancelTitle')}
+          warning={t('cancelWarning')}
+          keep={t('keepOrder')}
+          yes={t('yesCancel')}
+        />
       )}
 
       <div className={`rounded-xl border-2 p-4 flex flex-col gap-3 transition-colors ${CARD_STYLE[order.status]}`}>
@@ -118,9 +142,9 @@ export function OrderCard({ order, onReprint }: { order: Order; onReprint?: (ord
           </div>
           <div className="flex flex-col items-end gap-1 shrink-0">
             <span className={`text-xs font-bold px-2 py-1 rounded-full ${BADGE_STYLE[order.status]}`}>
-              {STATUS_LABEL[order.status]}
+              {statusLabel[order.status]}
             </span>
-            <span className="text-gray-500 text-xs">{elapsed}m ago</span>
+            <span className="text-gray-500 text-xs">{fill('minutesAgo', { n: elapsed })}</span>
           </div>
         </div>
 
@@ -128,19 +152,23 @@ export function OrderCard({ order, onReprint }: { order: Order; onReprint?: (ord
         <div className="flex flex-wrap gap-2 text-xs">
           <span className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full capitalize">
             {order.type === 'eat-in'
-              ? `Dine-in · Table ${order.table_number ?? '?'}`
+              ? fill('dineIn', { n: order.table_number ?? '?' })
               : order.type === 'delivery'
-              ? 'Delivery'
-              : 'Takeaway'}
+              ? t('delivery')
+              : t('takeaway')}
           </span>
           {order.pickup_time && (
             <span className="bg-gray-800 text-yellow-300 px-2 py-0.5 rounded-full">
-              Pickup: {order.pickup_time}
+              {fill('pickupLabel', { time: order.pickup_time })}
             </span>
           )}
           {order.scheduled_for && (
             <span className="bg-orange-900/60 text-orange-300 border border-orange-700 px-2 py-0.5 rounded-full font-semibold">
-              Scheduled: {new Date(order.scheduled_for).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+              {fill('scheduledLabel', {
+                dt: new Date(order.scheduled_for).toLocaleString(LOCALE_CODE[locale], {
+                  day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+                }),
+              })}
             </span>
           )}
           <span className="bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full">
@@ -151,7 +179,7 @@ export function OrderCard({ order, onReprint }: { order: Order; onReprint?: (ord
         {/* Delivery address */}
         {order.type === 'delivery' && order.delivery_street && (
           <div className="bg-gray-800/60 rounded-lg px-3 py-2 text-xs text-gray-300 space-y-0.5">
-            <p className="font-semibold text-gray-400 mb-1">Delivery address</p>
+            <p className="font-semibold text-gray-400 mb-1">{t('deliveryAddress')}</p>
             <p>{order.delivery_street}</p>
             <p>{order.delivery_postal_code} {order.delivery_city}</p>
             {order.delivery_instructions && (
@@ -172,13 +200,13 @@ export function OrderCard({ order, onReprint }: { order: Order; onReprint?: (ord
             ))}
           </ul>
         ) : (
-          <p className="text-gray-600 text-xs italic border-t border-gray-700 pt-2">No items loaded</p>
+          <p className="text-gray-600 text-xs italic border-t border-gray-700 pt-2">{t('noItemsLoaded')}</p>
         )}
 
         {/* Customer note */}
         {order.notes && (
           <div className="bg-yellow-900/30 border border-yellow-700/50 rounded-lg px-3 py-2">
-            <p className="text-yellow-200 text-xs font-semibold mb-0.5">Customer note</p>
+            <p className="text-yellow-200 text-xs font-semibold mb-0.5">{t('customerNote')}</p>
             <p className="text-yellow-100 text-sm">{order.notes}</p>
           </div>
         )}
@@ -186,30 +214,30 @@ export function OrderCard({ order, onReprint }: { order: Order; onReprint?: (ord
         {/* Total + reprint */}
         <div className="border-t border-gray-700 pt-2 space-y-1">
           <div className="flex justify-between text-xs text-gray-600">
-            <span>Excl. VAT</span>
+            <span>{t('exclVat')}</span>
             <span>€{totalExcl.toFixed(2)}</span>
           </div>
           {VAT_RATES.map((r) =>
             byRate[r] > 0.005 ? (
               <div key={r} className="flex justify-between text-xs text-gray-600">
-                <span>VAT {r}%</span>
+                <span>{t('vatRate').replace('{rate}', String(r))}</span>
                 <span>€{byRate[r].toFixed(2)}</span>
               </div>
             ) : null
           )}
           <div className="flex justify-between text-xs text-gray-600">
-            <span>Total VAT</span>
+            <span>{t('totalVat')}</span>
             <span>€{totalVat.toFixed(2)}</span>
           </div>
           <div className="flex justify-between items-center text-sm pt-1">
-            <span className="text-gray-500">Total</span>
+            <span className="text-gray-500">{t('total')}</span>
             <div className="flex items-center gap-2">
               {onReprint && (
                 <button
                   onClick={() => onReprint(order)}
                   className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white px-2 py-1 rounded-lg transition-colors border border-gray-700"
                 >
-                  Reprint
+                  {t('reprint')}
                 </button>
               )}
               <span className="text-white font-bold">€{order.total.toFixed(2)}</span>
@@ -226,7 +254,7 @@ export function OrderCard({ order, onReprint }: { order: Order; onReprint?: (ord
                 disabled={loading}
                 className={`flex-1 py-2.5 rounded-lg text-white font-bold text-sm transition-colors disabled:opacity-40 ${BTN_STYLE[next]}`}
               >
-                {loading ? '…' : `Mark ${STATUS_LABEL[next]}`}
+                {loading ? '…' : statusLabel[next]}
               </button>
             )}
             {canCancel && (
@@ -235,7 +263,7 @@ export function OrderCard({ order, onReprint }: { order: Order; onReprint?: (ord
                 disabled={loading}
                 className="py-2.5 px-3 rounded-lg bg-gray-800 hover:bg-red-950 border border-transparent hover:border-red-900 text-gray-500 hover:text-red-400 text-sm transition-colors disabled:opacity-40"
               >
-                Cancel
+                {t('cancel')}
               </button>
             )}
           </div>
