@@ -9,6 +9,9 @@ import type { CartItem } from '@/hooks/useCart'
 type PaymentMethod = 'cash' | 'card'
 type OrderType = 'takeaway' | 'eat-in'
 
+const IS_TAKEAWAY_RESTAURANT = process.env.NEXT_PUBLIC_RESTAURANT_TYPE === 'takeaway'
+const CUR = process.env.NEXT_PUBLIC_CURRENCY ?? '€'
+
 export function CheckoutSheet({
   items,
   total,
@@ -29,7 +32,11 @@ export function CheckoutSheet({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  const { byRate, totalExcl } = groupedVat(items)
+  const effectiveItems = (IS_TAKEAWAY_RESTAURANT || orderType === 'takeaway')
+    ? items.map((i) => ({ ...i, vatRate: 6 as const }))
+    : items
+
+  const { byRate, totalExcl } = groupedVat(effectiveItems)
 
   async function place() {
     if (!customerName.trim()) return setError(t('errCustomerName'))
@@ -60,7 +67,7 @@ export function CheckoutSheet({
     }
 
     await supabase.from('orders_items').insert(
-      items.map((item, i) => ({
+      effectiveItems.map((item, i) => ({
         id: crypto.randomUUID(),
         _order: i,
         _parent_id: order.id,
@@ -149,19 +156,19 @@ export function CheckoutSheet({
         <div className="py-3 border-t-2 border-dashed border-[#f0e8e0] space-y-1.5">
           <div className="flex justify-between text-xs text-[#aaa]">
             <span>{t('exclVat')}</span>
-            <span>€{totalExcl.toFixed(2)}</span>
+            <span>{CUR}{totalExcl.toFixed(2)}</span>
           </div>
           {VAT_RATES.map((r) =>
             byRate[r] > 0.005 ? (
               <div key={r} className="flex justify-between text-xs text-[#aaa]">
                 <span>{t('vatRate').replace('{rate}', String(r))}</span>
-                <span>€{byRate[r].toFixed(2)}</span>
+                <span>{CUR}{byRate[r].toFixed(2)}</span>
               </div>
             ) : null
           )}
           <div className="flex justify-between items-baseline pt-1">
             <span className="font-mono font-bold text-[#2d2d2d] text-sm">{t('total')}</span>
-            <span className="font-mono font-bold text-xl text-[#2d2d2d]">€{total.toFixed(2)}</span>
+            <span className="font-mono font-bold text-xl text-[#2d2d2d]">{CUR}{total.toFixed(2)}</span>
           </div>
         </div>
 

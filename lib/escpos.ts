@@ -15,6 +15,7 @@ const FEED = '\x0A'
 const CUT = GS + 'V\x41\x03'
 
 const W = 42
+const CUR = process.env.NEXT_PUBLIC_CURRENCY ?? '€'
 
 function pad(left: string, right: string, width = W): string {
   const gap = width - left.length - right.length
@@ -107,7 +108,7 @@ export function cashierReceipt(order: Order, restaurantName: string, locale: Loc
     ALIGN_LEFT,
     divider() + FEED,
     ...items.map((i) =>
-      pad(`${i.quantity}x  ${i.name}`, `€${(i.price * i.quantity).toFixed(2)}`) + FEED
+      pad(`${i.quantity}x  ${i.name}`, `${CUR}${(i.price * i.quantity).toFixed(2)}`) + FEED
     ),
     divider() + FEED,
     ...(() => {
@@ -118,13 +119,13 @@ export function cashierReceipt(order: Order, restaurantName: string, locale: Loc
       }))
       const { byRate, totalExcl } = groupedVat(lines)
       return [
-        pad(t('printExclVat', locale), `€${totalExcl.toFixed(2)}`) + FEED,
+        pad(t('printExclVat', locale), `${CUR}${totalExcl.toFixed(2)}`) + FEED,
         ...VAT_RATES.filter((r) => byRate[r] > 0.005).map(
           (r) =>
-            pad(fill(t('printVatRate', locale), { rate: r }), `€${byRate[r].toFixed(2)}`) + FEED
+            pad(fill(t('printVatRate', locale), { rate: r }), `${CUR}${byRate[r].toFixed(2)}`) + FEED
         ),
         divider() + FEED,
-        BOLD_ON + pad(t('printTotal', locale), `€${order.total.toFixed(2)}`) + BOLD_OFF + FEED,
+        BOLD_ON + pad(t('printTotal', locale), `${CUR}${order.total.toFixed(2)}`) + BOLD_OFF + FEED,
         divider() + FEED,
       ]
     })(),

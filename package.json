@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "cp node_modules/qz-tray/qz-tray.js public/qz-tray.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.1",
